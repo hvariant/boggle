@@ -1,5 +1,5 @@
-: foreach *.cc |> g++ -Wall -c %f -o %o |> %B.o
+: foreach *.cc |> g++ -Wall -g -c %f -o %o |> %B.o
 
-: *.o |> g++ %f -o %o |> hello
+: *.o |> g++ %f -o %o |> boggle-search
 
 .gitignore
