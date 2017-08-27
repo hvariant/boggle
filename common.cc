@@ -19,48 +19,28 @@ using namespace std;
  *  x
 */
 
-pair<int,int> ind_to_xy(const int i, const int dim){
-    int y = i % dim;
-    int x = i / dim;
-
-    //assert(x >= 0 && x < dim);
-    //assert(y >= 0 && y < dim);
-
-    return pair<int,int>(x,y);
-}
-
-int xy_to_ind(const pair<int,int>& xy, const int dim){
-    int i = xy.first * dim + xy.second;
-
-    //assert(i >= 0 && i < dim*dim);
-
-    return i;
-}
-
-int xy_to_ind(const int x, const int y, const int dim){
-    return x * dim + y;
-}
-
 bool check_bound(const pair<int,int>& xy, const int dim){
     return xy.first >= 0 && xy.first < dim && xy.second >=0 && xy.second < dim;
 }
 
+/*
+    U = 0, D, L, R,
+    UR, UL, DR, DL, Direction_END
+*/
+static int delta_x[] = {
+    -1, 1, 0, 0,
+    -1, -1, 1, 1,
+};
+static int delta_y[] = {
+    0, 0, -1, 1,
+    1, -1, 1, -1,
+};
+
 pair<int,int> go_dir(const int x, const int y, const Direction dir){
     pair<int,int> xy = {x,y};
 
-    // speed up using table?
-    if(dir == U || dir == UL || dir == UR){ // upward
-        xy.first--;
-    }
-    if(dir == D || dir == DL || dir == DR){ // downward
-        xy.first++;
-    }
-    if(dir == L || dir == DL || dir == UL){ // to left
-        xy.second--;
-    }
-    if(dir == R || dir == DR || dir == UR){ // to right
-        xy.second++;
-    }
+    xy.first += delta_x[(int)dir];
+    xy.second += delta_y[(int)dir];
 
     return xy;
 }

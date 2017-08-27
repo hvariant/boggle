@@ -1,5 +1,10 @@
-: foreach *.cc |> g++ -Wall -g -c %f -o %o |> %B.o
+CXXFLAGS += -Wall
+;CXXFLAGS += -g
+CXXFLAGS += -O2
 
-: *.o |> g++ %f -o %o |> boggle-search
+: foreach *.cc |> g++ $(CXXFLAGS) -c %f -o %o |> %B.o
+
+: boggle_dice.o boggle_gen.o boggle_dict.o boggle_search.o common.o search.o |> g++ %f -o %o |> boggle_search
+: boggle_dict.o boggle_dict_test.o |> g++ %f -o %o |> boggle_dict_test
 
 .gitignore
