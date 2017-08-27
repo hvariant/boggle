@@ -12,11 +12,12 @@ int main(int argc, char* argv[]){
     // default arguments
     int dim = 4;
     int min_len = 1;
-    int max_len = dim*dim;
+    int max_len = -1;
     bool count = false;
     bool classic = false;
     string dict_fn = "dictionary.txt";
     int seed = -1;
+    int n_threads = 1;
 
     for (int i = 1; i < argc; i++) {
         string arg = argv[i];
@@ -47,6 +48,8 @@ int main(int argc, char* argv[]){
             dict_fn = val;
         } else if (arg  == "-r") {
             seed = stoi(val);
+        } else if (arg  == "-p") {
+            n_threads = stoi(val);
         } else {
             cerr << "Unknown argument " << arg << endl;
             return 1;
@@ -54,6 +57,7 @@ int main(int argc, char* argv[]){
 
         i++;
     }
+    if(max_len == -1) max_len = dim*dim;
 
     cerr << "dim=" << dim << endl;
     cerr << "min_len=" << min_len << endl;
@@ -62,10 +66,11 @@ int main(int argc, char* argv[]){
     cerr << "classic=" << classic << endl;
     cerr << "dict_fn=" << dict_fn << endl;
     cerr << "seed=" << seed << endl;
+    cerr << "n_threads=" << n_threads << endl;
     cerr << endl << endl;
 
     if(count){
-        uint_fast64_t path_count = search_boggle_path_count(dim, min_len, max_len);
+        uint_fast64_t path_count = search_boggle_path_count(dim, min_len, max_len, n_threads);
         cout << "number of paths: " << path_count << endl;
     } else {
         vector<vector<char> > board;
@@ -87,7 +92,7 @@ int main(int argc, char* argv[]){
         cout << endl;
 
         boggle_dict dict(dict_fn);
-        set<string> words = search_boggle(board, dict);
+        set<string> words = search_boggle(board, dict, n_threads);
 
         cout << "List of words:" << endl;
         for(const auto& s : words)

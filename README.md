@@ -21,5 +21,5 @@ of a boggle word, `<max_len>` is the maximum length of a boggle word.
 - [x] generate boggle puzzle
 - [x] solve boggle using dictionary
 - [ ] generate boggle dice configuration of random dimension
-- [ ] parallelise search for different starting positions
-- [ ] use symmetry to reduce search space when counting
+- [x] parallelise search for different starting positions
+- [x] use symmetry to reduce search space when counting

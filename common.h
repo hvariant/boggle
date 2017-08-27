@@ -2,8 +2,6 @@
 
 #include <utility>
 
-const bool DEBUG = false;
-
 enum Direction {
     U = 0, D, L, R,
     UR, UL, DR, DL, Direction_END

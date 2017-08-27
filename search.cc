@@ -1,16 +1,15 @@
 #include "search.h"
 #include "common.h"
+#include "ctpl_stl.h"
 #include <iostream>
+#include <numeric>
+#include <algorithm>
 
 using namespace std;
 
 static void init_visited(vector<vector<bool> >& visited, const int dim){
     for(int i=0;i<dim;i++)
         visited.push_back(vector<bool>(dim,false));
-}
-
-static bool check_visited(const pair<int, int>& xy, const vector<vector<bool> >& visited){
-    return visited[xy.first][xy.second];
 }
 
 static uint_fast64_t _search_boggle_path_count(int x, int y, int depth, vector<vector<bool> >& visited, const int dim, const int min_len, const int max_len){
@@ -35,7 +34,7 @@ static uint_fast64_t _search_boggle_path_count(int x, int y, int depth, vector<v
         if(!check_bound(new_xy, dim)){ // out of bound
             continue;
         }
-        if(check_visited(new_xy, visited)){ // already visited
+        if(visited[new_xy.first][new_xy.second]){ // already visited
             continue;
         }
 
@@ -47,29 +46,45 @@ static uint_fast64_t _search_boggle_path_count(int x, int y, int depth, vector<v
     return path_count;
 }
 
-uint_fast64_t search_boggle_path_count(const int dim, const int min_len, const int max_len){
-    if(DEBUG){
-        cerr << endl << endl;
-        cerr << "+search_boggle_paths" << endl;
-        cerr << "dim:" << dim << endl;
-        cerr << "min_len:" << min_len << endl;
-        cerr << "max_len:" << max_len << endl;
+static int multiplier(const int x, const int y, const int dim){
+    if(dim == 1) return 1;
+    if(dim == 2) return 4;
+    if(x >= (dim+1)/2 || y >= (dim+1)/2) return 0; // symmetric
+
+    if(dim % 2 == 1 && x == dim/2 && x == y) return 1; // center position
+    return 4;
+}
+
+uint_fast64_t search_boggle_path_count(const int dim, const int min_len, const int max_len, const int n_threads){
+    vector<vector<uint_fast64_t> > counts; // dim x dim
+    for(int i=0;i<dim;i++)
+        counts.push_back(vector<uint_fast64_t>(dim,0));
+
+    ctpl::thread_pool pool(n_threads);
+    for(int x=0;x<(dim+1)/2;x++){
+        for(int y=0;y<(dim+1)/2;y++){ // TODO: take symmetry into account
+            pool.push([&counts, x, y, dim, min_len, max_len](int){
+                vector<vector<bool> > visited;
+                init_visited(visited, dim);
+                counts[x][y] = _search_boggle_path_count(x, y, 0, visited, dim, min_len, max_len);
+            });
+        }
     }
+    pool.stop(true); // join all threads
 
-    uint_fast64_t path_count = 0;
-
-    // TODO: parallelise this
-    for(int x=0;x<dim;x++){
-        for(int y=0;y<dim;y++){ // TODO: take symmetry into account
-            vector<vector<bool> > visited;
-            init_visited(visited, dim);
-            path_count += _search_boggle_path_count(x, y, 0, visited, dim, min_len, max_len);
+    for(size_t x=0;x<counts.size();x++){
+        for(size_t y=0;y<counts[x].size();y++){
+            cerr << "(" << x << "," << y << "): " << counts[x][y] << "x" << multiplier(x,y,dim) << endl;
+            counts[x][y] = counts[x][y] * multiplier(x,y,dim);
         }
     }
 
-    if(DEBUG){
-        cerr << "-search_boggle_paths" << endl;
-    }
+    uint_fast64_t path_count = std::accumulate(
+        counts.begin(), counts.end(), 0ULL, /* need to write 0ULL instead of 0 to avoid overflow */
+        [] (const uint_fast64_t acc, const vector<uint_fast64_t>& row) {
+            return acc + std::accumulate(row.begin(), row.end(), 0ULL);
+        }
+    );
 
     return path_count;
 }
@@ -97,7 +112,7 @@ static void _search_boggle(int x, int y, string& word, vector<vector<bool> >& vi
         if(!check_bound(new_xy, dim)){ // out of bound
             continue;
         }
-        if(check_visited(new_xy, visited)){ // already visited
+        if(visited[new_xy.first][new_xy.second]){ // already visited
             continue;
         }
 
@@ -108,7 +123,7 @@ static void _search_boggle(int x, int y, string& word, vector<vector<bool> >& vi
     word.pop_back();
 }
 
-set<string> search_boggle(const vector<vector<char> >& board, const boggle_dict& dict){
+set<string> search_boggle(const vector<vector<char> >& board, const boggle_dict& dict, const int n_threads){
     const int dim = board.size();
 
     set<string> words;
@@ -121,8 +136,11 @@ set<string> search_boggle(const vector<vector<char> >& board, const boggle_dict&
             vector<string> _words;
             _search_boggle(x, y, word, visited, _words, board, dict, dim);
 
-            for(const auto& it : _words)
-                words.insert(it);
+            std::for_each(_words.begin(), _words.end(),
+                [&words](const string& word){
+                    words.insert(word);
+                }
+            );
         }
     }
 
