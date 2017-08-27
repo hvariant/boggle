@@ -1,6 +1,6 @@
-## boggle-path-search
+## boggle solver
 
-This program enumerates all the possible paths on a boggle board.
+This program enumerates all the possible paths on a boggle board and can also randomly generate and solve a boggle game.
 
 Dictionary downloaded from [here](http://www.cs.duke.edu/courses/cps100/spring05/assign/boggle/), renamed from `enable1.txt` to `dictionary.txt`.
 
@@ -23,3 +23,4 @@ of a boggle word, `<max_len>` is the maximum length of a boggle word.
 - [ ] generate boggle dice configuration of random dimension
 - [x] parallelise search for different starting positions
 - [x] use symmetry to reduce search space when counting
+- [ ] user input boggle game
