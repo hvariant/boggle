@@ -47,12 +47,18 @@ static uint_fast64_t _search_boggle_path_count(int x, int y, int depth, vector<v
 }
 
 static int multiplier(const int x, const int y, const int dim){
-    if(dim == 1) return 1;
-    if(dim == 2) return 4;
-    if(x >= (dim+1)/2 || y >= (dim+1)/2) return 0; // symmetric
-
-    if(dim % 2 == 1 && x == dim/2 && x == y) return 1; // center position
-    return 4;
+    if(x < dim/2 && y < dim/2){
+        return 4;
+    }
+    if(dim % 2 == 1){ // odd dim, special cases
+        int mid = dim/2;
+        if(y <= mid && x < y){ // mid column, upper squares
+            return 4;
+        } else if(y == mid && x == y){ // center square
+            return 1;
+        }
+    }
+    return 0;
 }
 
 uint_fast64_t search_boggle_path_count(const int dim, const int min_len, const int max_len, const int n_threads){
@@ -61,12 +67,14 @@ uint_fast64_t search_boggle_path_count(const int dim, const int min_len, const i
         counts.push_back(vector<uint_fast64_t>(dim,0));
 
     ctpl::thread_pool pool(n_threads);
-    for(int x=0;x<(dim+1)/2;x++){
-        for(int y=0;y<(dim+1)/2;y++){ // TODO: take symmetry into account
+    for(int x=0;x<dim;x++){
+        for(int y=0;y<dim;y++){
             pool.push([&counts, x, y, dim, min_len, max_len](int){
                 vector<vector<bool> > visited;
                 init_visited(visited, dim);
-                counts[x][y] = _search_boggle_path_count(x, y, 0, visited, dim, min_len, max_len);
+                int f = multiplier(x,y,dim);
+                if(f > 0)
+                    counts[x][y] = f*_search_boggle_path_count(x, y, 0, visited, dim, min_len, max_len);
             });
         }
     }
@@ -74,8 +82,11 @@ uint_fast64_t search_boggle_path_count(const int dim, const int min_len, const i
 
     for(size_t x=0;x<counts.size();x++){
         for(size_t y=0;y<counts[x].size();y++){
-            cerr << "(" << x << "," << y << "): " << counts[x][y] << "x" << multiplier(x,y,dim) << endl;
-            counts[x][y] = counts[x][y] * multiplier(x,y,dim);
+            uint_fast64_t cnt = counts[x][y];
+            int f = multiplier(x,y,dim);
+            uint_fast64_t base = 0;
+            if(cnt != 0) base = cnt / f;
+            cerr << "(" << x << "," << y << "): " << cnt << "[" << base << "x" << f << "]" << endl;
         }
     }
 
